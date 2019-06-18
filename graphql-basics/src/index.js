@@ -18,7 +18,7 @@ const resolvers = {
             return "abc123";
         },
         name() {
-            return "Jeanette";
+            return "Matt";
         },
         age() {
             return 27;
