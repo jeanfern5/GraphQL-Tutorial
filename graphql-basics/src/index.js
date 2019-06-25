@@ -26,28 +26,65 @@ const posts = [
         id: "a1",
         title: "Hello World",
         body: "Hello World",
-        published: true
+        published: true,
+        author: '3'
     },
     {
         id: "b2",
         title: "GraphQL",
         body: "This is how you graphql....",
-        published: false
+        published: false,
+        author: "1"
     },
     {
         id: "c3",
         title: "The Final Post",
         body: "It was never completed....",
-        published: false
-    }
+        published: false,
+        author: "2"
+    },
+    {
+        id: "a2",
+        title: "Hello GraphQL",
+        body: "This is about GraphQL....",
+        published: false,
+        author: "1"
+    },
+
+]
+
+//Demo comments data
+const comments = [
+    {
+        id: "z100",
+        text: "Awesomesauce!",
+        author: "1"
+    },
+    {
+        id: "y99",
+        text: "Cool!",
+        author: "1"
+    },
+    {
+        id: "x98",
+        text: "Could use more images.",
+        author: "2"
+    },
+    {
+        id: "w97",
+        text: "I love the diagrams!",
+        author: "3"
+    },
+
 ]
 
 //Type definitions (schema)
 const typeDefs = `
     type Query {
         users(query: String): [User!]!
-        me: User!
         posts(query: String): [Post!]!
+        comments: [Comment!]! 
+        me: User!
         post: Post!
     }
     type User {
@@ -55,13 +92,22 @@ const typeDefs = `
         name: String!
         email: String!
         age: Int
+        posts: [Post!]!
+        comments: [Comment!]!
     }
 
-    type Post{
+    type Post {
        id: ID!
        title: String!
        body: String!
        published: Boolean! 
+       author: User!
+    }
+
+    type Comment {
+        id: ID!
+        text: String!
+        author: User!
     }
 `
 
@@ -79,13 +125,6 @@ const resolvers = {
                 return user.name.toLowerCase().includes(query.toLowerCase());
             });
         },
-        me() {
-            return {
-                id: "1234098",
-                name: "Mike",
-                email: "Mike@example.com"
-            };
-        },
         posts(parent, args, ctx, info) {
             const query = args.query;
 
@@ -100,6 +139,16 @@ const resolvers = {
                 return isTitleMatch || isBodyMatch; 
             });
         },
+        comments(parent, args, ctx, info) {
+            return comments;
+        },
+        me() {
+            return {
+                id: "1234098",
+                name: "Mike",
+                email: "Mike@example.com"
+            };
+        },
         post() {
             return {
                 id: "abc1234",
@@ -108,7 +157,35 @@ const resolvers = {
                 published: false
             };
         },
-    }
+    },
+    Post: {
+        author(parent, args, ctx, info) {
+            return users.find((user) => {
+                return user.id === parent.author;
+            });
+        }
+    },
+    Comment: {
+        author(parent, args, ctx, info) {
+            return users.find((user) => {
+                return user.id === parent.author;
+            });
+        }
+    },
+    User: {
+        posts(parent, args, ctx, info) {
+            return posts.filter((post) => {
+                return post.author === parent.id;
+            });
+        },
+        comments(parent, args, ctx, info) {
+            
+            return comments.filter((post) => {
+                console.log(parent)
+                return post.author === parent.id;
+            });
+        }
+    },
 }
 
 const server = new GraphQLServer ({
