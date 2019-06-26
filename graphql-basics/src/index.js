@@ -1,4 +1,5 @@
 import { GraphQLServer } from 'graphql-yoga';
+import uuidv4 from 'uuid/v4';
 
 //Demo user data
 const users = [
@@ -58,22 +59,26 @@ const comments = [
     {
         id: "z100",
         text: "Awesomesauce!",
-        author: "1"
+        author: "1",
+        post: "c3"
     },
     {
         id: "y99",
         text: "Cool!",
-        author: "1"
+        author: "1",
+        post: "a1"
     },
     {
         id: "x98",
         text: "Could use more images.",
-        author: "2"
+        author: "2",
+        post: "a2"
     },
     {
         id: "w97",
         text: "I love the diagrams!",
-        author: "3"
+        author: "3",
+        post: "a1"
     },
 
 ]
@@ -87,6 +92,32 @@ const typeDefs = `
         me: User!
         post: Post!
     }
+
+    type Mutation {
+        createUser(data: inputUser!): User!
+        createPost(data: inputPost!): Post!
+        createComment(data: inputComment!): Comment!
+    }
+
+    input inputUser {
+        name: String!
+        email: String!
+        age: Int
+    }
+
+    input inputPost {
+        title: String!
+        body: String!
+        published: Boolean! 
+        author: ID!
+    }
+
+    input inputComment {
+        text: String!
+        author: ID!
+        post: ID!
+    }
+
     type User {
         id: ID!
         name: String!
@@ -102,12 +133,14 @@ const typeDefs = `
        body: String!
        published: Boolean! 
        author: User!
+       comments: [Comment!]!
     }
 
     type Comment {
         id: ID!
         text: String!
         author: User!
+        post: Post!
     }
 `
 
@@ -158,32 +191,83 @@ const resolvers = {
             };
         },
     },
+    Mutation: {
+        createUser(parent, args, ctx, info) {
+            const emailTaken = users.some((user) => user.email === args.data.email);
+
+            if (emailTaken) {
+                throw new Error(`Email already taken.`);
+            }
+
+            const user = {
+                id: uuidv4(),
+                ...args.data
+            }
+
+
+            users.push(user);
+
+            return user;
+        },
+        createPost(parent, args, ctx, info) {
+            const userExists = users.some((user) => user.id === args.data.author);
+
+            if (!userExists) {
+                throw new Error('User not found');
+            }
+
+            const post = {
+                id: uuidv4(),
+                ...args.data
+            }
+
+            posts.push(post);
+
+            return post;
+        },
+        createComment(parent, args, ctx, info) {
+            const userExists = users.some((user) => user.id === args.data.author);
+            const postExists = posts.some((post) => post.id === args.data.post && post.published);
+
+            if (!userExists) {
+                throw new Error('User not found');
+            } else if (!postExists) {
+                throw new Error('Post not found');
+            }
+
+            const comment = {
+                id: uuidv4(),
+                ...args.data
+            }
+
+            comments.push(comment);
+
+            return comment;
+        }
+    },
     Post: {
         author(parent, args, ctx, info) {
-            return users.find((user) => {
-                return user.id === parent.author;
-            });
+            return users.find((user) => user.id === parent.author);
+        },
+        comments(parent, args, ctx, info) {
+       
+            return comments.filter((comment) => comment.post === parent.id);
         }
     },
     Comment: {
         author(parent, args, ctx, info) {
-            return users.find((user) => {
-                return user.id === parent.author;
-            });
+            return users.find((user) => user.id === parent.author);
+        },
+        post(parent, args, ctx, info) {
+            return posts.find((post) => post.id === parent.post);
         }
     },
     User: {
         posts(parent, args, ctx, info) {
-            return posts.filter((post) => {
-                return post.author === parent.id;
-            });
+            return posts.filter((post) => post.author === parent.id);
         },
         comments(parent, args, ctx, info) {
-            
-            return comments.filter((post) => {
-                console.log(parent)
-                return post.author === parent.id;
-            });
+            return comments.filter((post) => post.author === parent.id);
         }
     },
 }
