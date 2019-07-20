@@ -24,13 +24,11 @@ type Query {
     input CreateInputUser {
         name: String!
         email: String!
-        age: Int
     }
 
     input UpdateInputUser {
         name: String
         email: String
-        age: Int
     }
 
     input CreateInputPost {
@@ -60,7 +58,6 @@ type Query {
         id: ID!
         name: String!
         email: String!
-        age: Int
         posts: [Post!]!
         comments: [Comment!]!
     }

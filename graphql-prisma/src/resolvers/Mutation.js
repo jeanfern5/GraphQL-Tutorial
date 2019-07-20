@@ -2,104 +2,65 @@ import uuidv4 from 'uuid/v4';
 
 
 const Mutation = {
-    createUser(parent, { data }, { db: {users} }, info) {
-        const { email } = data;
-        const emailTaken = users.some((user) => user.email === email);
+    async createUser(parent, { data }, { prisma }, info) {
+        const emailTaken = await prisma.exists.User({ email: data.email });
 
-        if (emailTaken) {
+         if (emailTaken) {
             throw new Error(`Email already taken.`);
         }
 
-        const user = {
-            id: uuidv4(),
-            ...data
-        }
-
-        users.push(user);
-
+        const user = await prisma.mutation.createUser({ data }, info)
+ 
         return user;
     },
-    deleteUser(parent, { id }, { db: {users, posts, comments} }, info) {
-        const userIndex = users.findIndex((user) => user.id === id);
+    async deleteUser(parent, { id }, { prisma }, info) {
+        const userExists = await prisma.exists.User({ id })
 
-        if (userIndex === -1) {
+        if (!userExists) {
             throw new Error(`User not found`);
         }
 
-        const deletedUser = users.splice(userIndex, 1);
+        const deletedUser = await prisma.mutation.deleteUser({ where: { id } }, info);
+        
+        return deletedUser;
 
-        posts = posts.filter((post) => {
-            const match = post.author === id;
-
-            if (match) {
-                comments = comments.filter((comment) => comment.post !== post.id)
-            }
-
-            return !match;
-        })
-
-        comments = comments.filter((comment) => comment.author !== id)
-
-        return deletedUser[0];
     },
-    updateUser(parent, { id, data }, { db : {users} }, info) {
-        const { email, name, age } = data;
-        const user = users.find((user) => user.id === id);
-
-        if (!user) {
-            throw new Error('User not found');
-        }
-
-        if (typeof email === 'string') {
-            const emailTaken = users.some((user) => user.email === email);
-
-            if (emailTaken) {
-                throw new Error('Email already taken')
-            }
-
-            user.email = email
-        }
-
-        if (typeof name === 'string') {
-            user.name = name
-        }
-
-        if (typeof age !== 'undefined') {
-
-            if (age === 0){
-                user.age = "null"
-            }
-
-            user.age = age
-        }
-
-        return user;
-    },
-    createPost(parent, { data }, { db: {users, posts}, pubsub }, info) {
-        const { author } = data;
-        const userExists = users.some((user) => user.id === author);
+    async updateUser(parent, { id, data }, { prisma }, info) {
+        const userExists = await prisma.exists.User({ id })
 
         if (!userExists) {
-            throw new Error('User not found');
+            throw new Error(`User not found`);
         }
 
-        const post = {
-            id: uuidv4(),
-            ...data
-        }
+       const udpatedUser = await prisma.mutation.updateUser({ where: { id }, data: data }, info);
 
-        posts.push(post);
+       return udpatedUser;
+    },
+    createPost(parent, { data }, { prisma, pubsub }, info) {
+        // const { author } = data;
+        // const userExists = users.some((user) => user.id === author);
 
-        if (data.published) {
-            pubsub.publish(`post`, { 
-                post: {
-                    mutation: `CREATED`,
-                    data: post
-                }
-            });
-        }
+        // if (!userExists) {
+        //     throw new Error('User not found');
+        // }
+
+        // const post = {
+        //     id: uuidv4(),
+        //     ...data
+        // }
+
+        // posts.push(post);
+
+        // if (data.published) {
+        //     pubsub.publish(`post`, { 
+        //         post: {
+        //             mutation: `CREATED`,
+        //             data: post
+        //         }
+        //     });
+        // }
         
-        return post;
+        // return post;
     },
     deletePost(parent, { id }, { db: {posts, comments}, pubsub }, info) {
         const postIndex = posts.findIndex((post) => post.id === id);

@@ -3,55 +3,57 @@ import { Prisma } from 'prisma-binding';
 const prisma = new Prisma({
     typeDefs: 'src/generated/prisma.graphql',
     endpoint: 'http://localhost:4466'
-})
+});
 
-const createPostForUser = async (authorId, data) => {
-    await prisma.mutation.createPost({
-        data: {
-            ...data,
-            author: {
-                connect: {
-                    id: authorId
-                }
-            }
-        }
-    })
+export default prisma;
 
-    const user = await prisma.query.user({
-        where: {
-            id: authorId
-        }
-    }, '{ id name email posts{ id title published } }')
+// const createPostForUser = async (authorId, data) => {
+//     await prisma.mutation.createPost({
+//         data: {
+//             ...data,
+//             author: {
+//                 connect: {
+//                     id: authorId
+//                 }
+//             }
+//         }
+//     })
 
-    return user;
-}
+//     const user = await prisma.query.user({
+//         where: {
+//             id: authorId
+//         }
+//     }, '{ id name email posts{ id title published } }')
 
-const updatePostForUser = async (postId, data) => {
-    const postExists = await prisma.exists.Post({ id: postId })
+//     return user;
+// }
 
-    if (!postExists) {
-        throw new Error('Post not found')
-    }
+// const updatePostForUser = async (postId, data) => {
+//     const postExists = await prisma.exists.Post({ id: postId })
 
-    const post = await prisma.mutation.updatePost({
-        where: {
-            id: postId
-        },
-        data
-    }, '{ author { id name email posts { id title published } } }')
+//     if (!postExists) {
+//         throw new Error('Post not found')
+//     }
+
+//     const post = await prisma.mutation.updatePost({
+//         where: {
+//             id: postId
+//         },
+//         data
+//     }, '{ author { id name email posts { id title published } } }')
     
-    return post.author
-}
+//     return post.author
+// }
  
-// createPostForUser('cjxnslh2g00za0806nhapyi8u', 
-// { title: "Hello World", body: "Completed", published: true})
-// .then((user) => {
-//     console.log(JSON.stringify(user, undefined, 2))
-// })
+// // createPostForUser('cjxnslh2g00za0806nhapyi8u', 
+// // { title: "Hello World", body: "Completed", published: true})
+// // .then((user) => {
+// //     console.log(JSON.stringify(user, undefined, 2))
+// // })
 
 
-// updatePostForUser("power", { published: true }).then((user) => {
-//     console.log(JSON.stringify(user, undefined, 2))
-// }).catch((error) => {
-//     console.log(error.message)
-// })
+// // updatePostForUser("power", { published: true }).then((user) => {
+// //     console.log(JSON.stringify(user, undefined, 2))
+// // }).catch((error) => {
+// //     console.log(error.message)
+// // })
